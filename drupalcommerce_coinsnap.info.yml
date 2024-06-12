@@ -1,0 +1,13 @@
+name: Coinsnap Commerce Payment
+type: module
+description: Coinsnap Commerce Payment Gateway for Drupal Commerce.
+package: Commerce (contrib)
+dependencies:  
+  - commerce_payment
+
+# information about project
+version: "8.x-10.x-2.0.8"
+core: "8.x"
+core_version_requirement: ^8 || ^9 || ^10
+project: 'drupalcommerce_coinsnap'
+datestamp: 1714834872

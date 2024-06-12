@@ -1,0 +1,7 @@
+drupalcommerce_coinsnap.notify:
+  path: '/payment/notify/coinsnap'
+  defaults:
+    _controller: '\Drupal\drupalcommerce_coinsnap\Controller\PaymentNotificationController::notifyPage'
+  requirements:
+    _access: 'TRUE'
+  

@@ -1,0 +1,9 @@
+{
+    "name": "drupal/drupalcommerce-coinsnap",
+	"type": "drupal-module",
+    "description": "Coinsnap Commerce plugin for Drupal",    
+    "require": {
+    "drupal/commerce": "^2.0"
+  	},
+  	"license": "GPL-2.0+"
+}
