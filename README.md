@@ -11,12 +11,19 @@ When authorized, the payment will be credited to your Lightning wallet in real t
 # Coinsnap for Drupal 1.0.0 #
 
 Contributors: coinsnap
+
 Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, drupal, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
+
 Drupal version: 8.x - 10.x
+
 Tested up to: 10.1.8
+
 Requires PHP: 8.1
+
 Stable tag: 1.0.0
+
 License: GPL-2.0
+
 License URI: https://github.com/Coinsnap/Coinsnap-for-Drupal/blob/main/LICENSE
 
 With Coinsnap payment processing, you can accept Bitcoin and Lightning payments on your website or online store. You don’t need your own Lightning Node or other technical requirements.
