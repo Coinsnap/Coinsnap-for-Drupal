@@ -114,11 +114,15 @@ Or You can download Coinsnap payment module for Drupal from Coinsnap Github repo
 ![Modules list](https://resources.coinsnap.org/products/drupal/images/screenshot-01.png)
 
 2.1.1. Log into your Drupal admin interface
+
 2.1.2. After you have successfully logged in, click on **Menu** -> **Extend**
 
 ![Module upload](https://resources.coinsnap.org/products/drupal/images/screenshot-02.png)
+
 2.1.3. Click "Add new module" button, select Coinsnap Commerce Payment archive (the following file extensions are supported: *.zip, *.tar, *.tgz, *.gz, *.bz2).
+
 2.1.4. Click "Continue" button to upload and unpack the new module on the server.
+
 2.1.5. Install and activate it.
 
 ### 2.2. Module setup ###
