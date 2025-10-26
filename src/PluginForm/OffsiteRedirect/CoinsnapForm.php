@@ -2,7 +2,7 @@
 
 namespace Drupal\drupalcommerce_coinsnap\PluginForm\OffsiteRedirect;
 
-require_once __DIR__ . '/../../Coinsnap/library/autoload.php';
+require_once __DIR__ . '/../../Coinsnap/library/loader.php';
 
 
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm;

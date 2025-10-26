@@ -1,7 +1,7 @@
 {
     "name": "drupal/drupalcommerce-coinsnap",
 	"type": "drupal-module",
-    "description": "Coinsnap Commerce plugin for Drupal",    
+    "description": "Coinsnap plugin for Drupal Commerce",    
     "require": {
     "drupal/commerce": "^2.0"
   	},

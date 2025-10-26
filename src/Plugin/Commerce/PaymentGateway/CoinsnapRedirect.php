@@ -1,6 +1,6 @@
 <?php
 namespace Drupal\drupalcommerce_coinsnap\Plugin\Commerce\PaymentGateway;
-require_once __DIR__ . '/../../../Coinsnap/library/autoload.php';
+require_once __DIR__ . '/../../../Coinsnap/library/loader.php';
 
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
@@ -31,41 +31,182 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase
 	/**
      * {@inheritdoc}
      */    
-    public function defaultConfiguration()
-    {
+    public function defaultConfiguration(){
         return [
-                'store_id' => '',
-                'api_key' => '',
-            ] + parent::defaultConfiguration();
+            'provider' => 'coinsnap',
+            'store_id' => '',
+            'api_key' => '',
+            'btcpay_server_url' => '',
+            'btcpay_store_id' => '',
+            'btcpay_api_key' => '',
+            'autoredirect' => TRUE,
+            'returnurl' => '',
+            'discount_enabled' => TRUE,
+            'discount_type' => 'amount',
+            'discount_amount' => '',
+            'discount_amount_limit' => '',
+            'discount_percentage' => '',
+        ] + parent::defaultConfiguration();
     }
 	
     
     public function buildConfigurationForm(array $form, FormStateInterface $form_state)
     {
         $form = parent::buildConfigurationForm($form, $form_state);
-		unset($form['mode']);
+	unset($form['mode']);
 
+        $provider = !empty($this->configuration['provider']) ? $this->configuration['provider'] : 'coinsnap';
         $store_id = !empty($this->configuration['store_id']) ? $this->configuration['store_id'] : '';
         $api_key = !empty($this->configuration['api_key']) ? $this->configuration['api_key'] : '';
-
+        $btcpay_server_url = !empty($this->configuration['btcpay_server_url']) ? $this->configuration['btcpay_server_url'] : '';
+        $btcpay_store_id = !empty($this->configuration['btcpay_store_id']) ? $this->configuration['btcpay_store_id'] : '';
+        $btcpay_api_key = !empty($this->configuration['btcpay_api_key']) ? $this->configuration['btcpay_api_key'] : '';
         
+        $autoredirect = !empty($this->configuration['autoredirect']) && $this->configuration['autoredirect'] > 0 ? TRUE : FALSE;
+        $returnurl = !empty($this->configuration['returnurl']) ? $this->configuration['returnurl'] : '';
+        
+        $discount_enabled = !empty($this->configuration['discount_enabled']) && $this->configuration['discount_enabled'] > 0 ? TRUE : FALSE;
+        $discount_type = !empty($this->configuration['provider']) ? $this->configuration['discount_type'] : 'amount';
+        $discount_amount = !empty($this->configuration['btcpay_server_url']) ? $this->configuration['btcpay_server_url'] : '';
+        $discount_amount_limit = !empty($this->configuration['btcpay_store_id']) ? $this->configuration['btcpay_store_id'] : '';
+        $discount_percentage = !empty($this->configuration['btcpay_api_key']) ? $this->configuration['btcpay_api_key'] : '';
+
+        $form['#attached']['library'][] = 'drupalcommerce_coinsnap/drupalcommerce_coinsnap_admin';
+        
+        $form['provider'] = [
+            '#type' => 'select',
+            '#title' => $this->t('Provider'),
+            '#options' => [
+                'coinsnap' => $this->t('Coinsnap'),
+                'btcpay' => $this->t('BTCPay server'),
+            ],
+            '#default_value' => $provider,
+            '#description' => $this->t('Choose provider: Coinsnap or BTCPay Server')
+        ];
         
         $form['store_id'] = [
             '#type' => 'textfield',
-            '#title' => $this->t('Trade ID'),
+            '#title' => $this->t('Coinsnap Store ID'),
             '#default_value' => $store_id,
-            '#description' => $this->t('Store ID from Coinsnap.'),
-            '#required' => TRUE
+            '#description' => $this->t('Store ID from Coinsnap'),
+            '#required' => TRUE,
+            '#attributes' => [
+                'data-provider' => 'coinsnap'
+            ]
         ];
 
         $form['api_key'] = [
             '#type' => 'textfield',
-            '#title' => $this->t('Token'),
+            '#title' => $this->t('Coinsnap API Key'),
             '#default_value' => $api_key,
             '#description' => $this->t('API Key from Coinsnap'),
-            '#required' => TRUE
+            '#required' => TRUE,
+            '#attributes' => [
+                'data-provider' => 'coinsnap'
+            ]
+        ];
+        
+        $form['btcpay_server_url'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('BTCPay server URL'),
+            '#default_value' => $btcpay_server_url,
+            '#description' => $this->t('Your BTCPay server URL'),
+            '#required' => TRUE,
+            '#attributes' => [
+                'data-provider' => 'btcpay'
+            ]
         ];
 
+        $form['btcpay_store_id'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('BTCPay Store ID'),
+            '#default_value' => $btcpay_store_id,
+            '#description' => $this->t('Your BTCPay server Store ID'),
+            '#required' => TRUE,
+            '#attributes' => [
+                'data-provider' => 'btcpay'
+            ]
+        ];
+
+        $form['btcpay_api_key'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('BTCPay API Key'),
+            '#default_value' => $btcpay_api_key,
+            '#description' => $this->t('Your BTCPay server API Key'),
+            '#required' => TRUE,
+            '#attributes' => [
+                'data-provider' => 'btcpay'
+            ]
+        ];
+
+        $form['autoredirect'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Redirect after payment'),
+            '#default_value' => $autoredirect, //   TRUE or FALSE
+            '#description' => $this->t('Redirect to Thank You page after payment automatically')
+        ];
+        
+        $form['returnurl'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('Return URL after payment'),
+            '#default_value' => $returnurl,
+            '#description' => $this->t('Custom return URL after successful payment (default URL if blank)'),
+            '#required' => TRUE
+        ];
+        
+        $form['discount_enabled'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Discount enabled'),
+            '#default_value' => $discount_enabled, //   TRUE or FALSE
+            '#description' => $this->t('Discount enabled')
+        ];
+        
+        $form['discount_type'] = [
+            '#type' => 'select',
+            '#title' => $this->t('Discount type'),
+            '#options' => [
+                'fixed' => $this->t('Fixed'),
+                'percentage' => $this->t('Percentage'),
+            ],
+            '#default_value' => $discount_type,
+            '#description' => $this->t('Choose discount type: amount or percents'),
+            '#attributes' => [
+                'data-discount' => 'true'
+            ]
+        ];
+        
+        $form['discount_amount'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('Discount amount'),
+            '#default_value' => $discount_amount,
+            '#description' => $this->t('Discount amount'),
+            '#attributes' => [
+                'data-discount' => 'true',
+                'data-discount-type' => 'amount'
+            ]
+        ];
+        
+        $form['discount_amount_limit'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('Max discount amount, %'),
+            '#default_value' => $discount_amount_limit,
+            '#description' => $this->t('Max discount amount for fixed discount, %'),
+            '#attributes' => [
+                'data-discount' => 'true',
+                'data-discount-type' => 'amount'
+            ]
+        ];
+        
+        $form['discount_percentage'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('Discount amount, %'),
+            '#default_value' => $discount_percentage,
+            '#description' => $this->t('Discount amount in percents (%)'),
+            '#attributes' => [
+                'data-discount' => 'true',
+                'data-discount-type' => 'percentage'
+            ]
+        ];
         
         return $form;
     }
@@ -82,8 +223,21 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase
 
         if (!$form_state->getErrors() && $form_state->isSubmitted()) {
             $values = $form_state->getValue($form['#parents']);
+            $this->configuration['provider'] = $values['provider'];
             $this->configuration['store_id'] = $values['store_id'];
             $this->configuration['api_key'] = $values['api_key'];
+            $this->configuration['btcpay_server_url'] = $values['btcpay_server_url'];
+            $this->configuration['btcpay_store_id'] = $values['btcpay_store_id'];
+            $this->configuration['btcpay_api_key'] = $values['btcpay_api_key'];
+            
+            $this->configuration['autoredirect'] = $values['autoredirect'];
+            $this->configuration['returnurl'] = $values['returnurl'];
+            
+            $this->configuration['discount_enabled'] = $values['discount_enabled'];
+            $this->configuration['discount_type'] = $values['discount_type'];
+            $this->configuration['discount_amount'] = $values['discount_amount'];
+            $this->configuration['discount_amount_limit'] = $values['discount_amount_limit'];
+            $this->configuration['discount_percentage'] = $values['discount_percentage'];
         }
     }
 
@@ -95,17 +249,28 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase
         parent::submitConfigurationForm($form, $form_state);
         if (!$form_state->getErrors()) {
             $values = $form_state->getValue($form['#parents']);
+            $this->configuration['provider'] = $values['provider'];
             $this->configuration['store_id'] = $values['store_id'];
             $this->configuration['api_key'] = $values['api_key'];
+            $this->configuration['btcpay_server_url'] = $values['btcpay_server_url'];
+            $this->configuration['btcpay_store_id'] = $values['btcpay_store_id'];
+            $this->configuration['btcpay_api_key'] = $values['btcpay_api_key'];
+            
+            $this->configuration['autoredirect'] = $values['autoredirect'];
+            $this->configuration['returnurl'] = $values['returnurl'];
+            
+            $this->configuration['discount_enabled'] = $values['discount_enabled'];
+            $this->configuration['discount_type'] = $values['discount_type'];
+            $this->configuration['discount_amount'] = $values['discount_amount'];
+            $this->configuration['discount_amount_limit'] = $values['discount_amount_limit'];
+            $this->configuration['discount_percentage'] = $values['discount_percentage'];
         }
     }
 	/**
      * {@inheritdoc}
      */
-    public function onReturn(OrderInterface $order, Request $request)
-    {
-      
-		$payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
+    public function onReturn(OrderInterface $order, Request $request){
+        $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
     	$payment = $payment_storage->create([
       		'state' => 'pending',
       		'amount' => $order->getBalance(),
@@ -123,7 +288,7 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase
      */
     public function onNotify(Request $request)
     {
-		$notify_json = file_get_contents('php://input');          
+        $notify_json = file_get_contents('php://input');          
         $notify_ar = json_decode($notify_json, true);
         $invoice_id = $notify_ar['invoiceId'];
     

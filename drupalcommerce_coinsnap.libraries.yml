@@ -1,0 +1,8 @@
+drupalcommerce_coinsnap_admin:
+  js:
+      js/coinsnap.js: {
+        minified: false,
+        attributes: { id : "drupalcommerce_coinsnap_js" }
+      }
+  dependencies:
+      - core/jquery
