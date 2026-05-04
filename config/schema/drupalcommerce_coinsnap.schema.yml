@@ -10,6 +10,9 @@ commerce_payment.commerce_payment_gateway.plugin.coinsnap_redirect:
     api_key:
       type: string
       label: 'Coinsnap API Key'
+    webhook:
+      type: string
+      label: 'Coinsnap Webhook (JSON)'
     btcpay_server_url:
       type: uri
       label: 'BTCPay server URL'
@@ -19,9 +22,9 @@ commerce_payment.commerce_payment_gateway.plugin.coinsnap_redirect:
     btcpay_api_key:
       type: string
       label: 'BTCPay API Key'
-    webhook:
+    btcpay_webhook:
       type: string
-      label: 'Webhook (JSON)'
+      label: 'BTCPay Server Webhook (JSON)'
     autoredirect:
       type: boolean
       label: 'Redirect after payment'

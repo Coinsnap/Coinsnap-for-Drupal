@@ -1,0 +1,28 @@
+<?php
+
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\field\Entity\FieldConfig;
+
+/**
+ * Implements hook_install().
+ */
+function drupalcommerce_coinsnap_install() {
+
+    if (!FieldStorageConfig::loadByName('commerce_order', 'field_payment_gateway')) {
+        FieldStorageConfig::create([
+            'field_name' => 'field_payment_gateway',
+            'entity_type' => 'commerce_order',
+            'type' => 'string',
+            'cardinality' => 1,
+        ])->save();
+    }
+
+    if (!FieldConfig::loadByName('commerce_order', 'default', 'field_payment_gateway')) {
+        FieldConfig::create([
+            'field_name' => 'field_payment_gateway',
+            'entity_type' => 'commerce_order',
+            'bundle' => 'default',
+            'label' => 'Payment Gateway',
+        ])->save();
+    }
+}

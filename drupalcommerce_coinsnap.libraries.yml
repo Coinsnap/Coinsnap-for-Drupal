@@ -1,4 +1,4 @@
-drupalcommerce_coinsnap_admin:
+admin_scripts:
   js:
       js/coinsnap.js: {
         minified: false,

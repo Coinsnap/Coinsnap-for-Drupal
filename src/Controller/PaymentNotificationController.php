@@ -51,7 +51,7 @@ class PaymentNotificationController implements ContainerInjectionInterface
     public function notifyPage(Request $request)
     {
         
-        $payment_gateway_id = 'coinsnap';
+        $payment_gateway_id = 'bitcoin_lightning';
         $payment_gateway_storage = $this->entityTypeManager->getStorage('commerce_payment_gateway');
         $payment_gateway = $payment_gateway_storage->load($payment_gateway_id);                       
 

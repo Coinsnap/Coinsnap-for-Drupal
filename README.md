@@ -15,7 +15,7 @@ Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, drupal, payment
 Drupal version: 8.x - 10.x
 Tested up to: 10.1.8
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0
 License URI: https://github.com/Coinsnap/Coinsnap-for-Drupal/blob/main/LICENSE
 
