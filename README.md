@@ -220,7 +220,7 @@ Review your test order and go to payment:
 
 ![Drupal demo store](https://resources.coinsnap.org/products/drupal/images/screenshot-10.png)
 
-If you have configured Bitcoin discount, iscount will be applied to subtotal payment amount.
+If you have configured Bitcoin discount, discount will be applied to subtotal payment amount.
 
 The Bitcoin + Lightning payment page is now displayed, offering the payer the option to pay with Bitcoin or also with Lightning. Both methods are integrated in the displayed QR code. 
 
