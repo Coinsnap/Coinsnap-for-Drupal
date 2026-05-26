@@ -1,29 +1,30 @@
 # Bitcoin payment for Drupal Commerce #
 ![Coinsnap for Drupal Commerce](https://resources.coinsnap.org/products/drupal/images/cover.png)
 
-## Accept Bitcoin and Lightning Payments with Drupal Commerce ##
+## Accept Bitcoin and Lightning Payments with Drupal Commerce 2+ ##
 
 * Contributors: coinsnap
 * Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, drupal, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
-* Drupal version: 8.x - 10.x
+* Drupal version: 8.x - 11.x
 * Dependency: [Commerce Core](https://www.drupal.org/project/commerce)
-* Tested up to: 10.1.8
+* Drupal Commerce version: 2.x - 3.x
+* Tested up to: 10.6.7
 * Requires PHP: 8.1
-* Stable tag: 1.0.0
-* License: GPL-2.0
-* License URI: [https://github.com/Coinsnap/Coinsnap-for-Drupal/blob/main/LICENSE](https://github.com/Coinsnap/Coinsnap-for-Drupal/blob/main/LICENSE)
+* Stable tag: 1.1.0
+* License: GPL-3.0
+* License URI: [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)
 
 The Coinsnap Drupal plugin allows you to accept Bitcoin Lightning payments in Drupal online shop.
 
 # Description #
 
-[Coinsnap](https://coinsnap.io/en/) provides modules and plugins that enable online stores to receive Bitcoin payments from their customers' Bitcoin Lightning wallets to their own Bitcoin Lightning wallets for digital and physical goods.
+[Coinsnap](https://coinsnap.io/) provides modules and plugins that enable online stores to receive Bitcoin payments from their customers' Bitcoin Lightning wallets to their own Bitcoin Lightning wallets for digital and physical goods.
 
 Drupal lets web shop owners and operators manage products, carts, and transactions as first-class concerns alongside media and content. Drupal makes ambitious teams more productive as their projects grow. Unique customer experiences, complex checkout flows, and deep integrations into payment and fulfillment vendors are all within reach for merchants of any size.
 
-* Coinsnap Drupal Demo Site: [https://drupal.coinsnap.net/](https://drupal.coinsnap.net/)
-* Blog Article: [https://coinsnap.io/coinsnap-for-drupal-payment-plugin/](https://coinsnap.io/coinsnap-for-drupal-payment-plugin/)
-* Drupla Marketplace: [https://www.drupal.org/project/drupalcommerce_coinsnap](https://www.drupal.org/project/drupalcommerce_coinsnap)
+* Coinsnap Drupal Demo Site: [https://drupal.coinsnap.org/](https://drupal.coinsnap.org/)
+* Blog Article: [https://coinsnap.io/shop-systems/drupal/](https://coinsnap.io/shop-systems/drupal/)
+* Drupal Marketplace: [https://www.drupal.org/project/drupalcommerce_coinsnap](https://www.drupal.org/project/drupalcommerce_coinsnap)
 * GitHub: [https://github.com/Coinsnap/Coinsnap-for-Drupal](https://github.com/Coinsnap/Coinsnap-for-Drupal)
 
 ## Bitcoin and Lightning payments in Drupal Commerce ##
@@ -37,12 +38,12 @@ Coinsnap’s payment plugin for Drupal makes it amazingly simple for your custom
 
 With Coinsnap payment processing, you can accept Bitcoin and Lightning payments on your website or online store. You don’t need your own Lightning Node or other technical requirements. With Coinsnap Payment Plugin you can integrate Bitcoin and Lightning payments into your Drupal store without any technical effort.
 
-Simply register on [Coinsnap](https://app.coinsnap.io/register), enter your own Lightning address, upload and install the Coinsnap payment module in Gambio Shop backend. Add your store ID and your API key which you’ll find in your Coinsnap account, and your customers can pay you with Bitcoin Lightning right away!
+Simply register on [Coinsnap](https://app.coinsnap.io/login), enter your own Lightning address, upload and install the Coinsnap payment module in Gambio Shop backend. Add your store ID and your API key which you’ll find in your Coinsnap account, and your customers can pay you with Bitcoin Lightning right away!
 
 
 ## Features: ##
 
-* **All you need is a Lightning Wallet with a Lightning address. [Here you can find an overview of the matching Lightning Wallets](https://coinsnap.io/en/lightning-wallet-with-lightning-address/)**
+* **All you need is a Lightning Wallet with a Lightning address.** [Here you can find an overview of the matching Lightning Wallets](https://coinsnap.io/blog/how-do-i-get-a-lightning-wallet/)
 
 * **Accept Bitcoin and Lightning payments** in your online store **without running your own technical infrastructure.** You do not need your own server, nor do you need to run your own Lightning Node.
 
@@ -83,9 +84,9 @@ Simply register on [Coinsnap](https://app.coinsnap.io/register), enter your own 
 ## Documentation: ##
 
 * [Coinsnap API (1.0) documentation](https://docs.coinsnap.io/)
-* [Frequently Asked Questions](https://coinsnap.io/en/faq/) 
-* [Terms and Conditions](https://coinsnap.io/en/general-terms-and-conditions/)
-* [Privacy Policy](https://coinsnap.io/en/privacy/)
+* [Frequently Asked Questions](https://coinsnap.io/help/coinsnap-faq/) 
+* [Terms of Service](https://coinsnap.io/info/terms-of-service/)
+* [Privacy Policy](https://coinsnap.io/info/privacy-policy/)
 
 
 # Installation #
@@ -119,7 +120,7 @@ Or You can download Coinsnap payment module for Drupal from Coinsnap Github repo
 
 ![Module upload](https://resources.coinsnap.org/products/drupal/images/screenshot-02.png)
 
-2.1.3. Click "Add new module" button, select Coinsnap Commerce Payment archive (the following file extensions are supported: *.zip, *.tar, *.tgz, *.gz, *.bz2).
+2.1.3. If your Drupal system allows module upload, click "Add new module" button, select Coinsnap Commerce Payment archive (the following file extensions are supported: *.zip, *.tar, *.tgz, *.gz, *.bz2).
 
 2.1.4. Click "Continue" button to upload and unpack the new module on the server.
 
@@ -131,12 +132,19 @@ Or You can download Coinsnap payment module for Drupal from Coinsnap Github repo
 2.2.1. Navigate to **Commerce** -> **Configuration** -> **Payment** -> **Payment gateways**, find Coinsnap Payment and click "**Edit**" button.
 
 ![Coinsnap module](https://resources.coinsnap.org/products/drupal/images/screenshot-04.png)
-2.2.2. Enter name and display name of payment method, config info (Store Id and API Key), set needed options and press "Save" button. 
+2.2.2. Enter name and display name of payment method, configure Coinsnap payment gateway info (Store Id and API Key), set needed options and press "Save" button. 
 
-![Coinsnap module settings](https://resources.coinsnap.org/products/drupal/images/screenshot-05.png)
+![Coinsnap module settings](https://resources.coinsnap.org/products/drupal/images/screenshot-05-1.png)
+
+If you want to receive payments using your BTCPay server gateway you need to configure BTCPay server settings (Server URL, Store Id and API Key). 
+
+![Coinsnap module settings](https://resources.coinsnap.org/products/drupal/images/screenshot-05-2.png)
+
+If you want to set discount for bitcoin payment, configure also Bitcoin discount settings.
+
 ### Now your shop is ready to accept Bitcoin and Lightning payments! ###
 
-If you don’t have a Coinsnap account yet, you can do so via the link shown: [Coinsnap Registration](https://app.coinsnap.io/register)
+If you don’t have a Coinsnap account yet, you can do so via the link shown: [Coinsnap Registration](https://app.coinsnap.io/)
 
 ## 2. Create account and add your store to Coinsnap ##
 
@@ -144,13 +152,11 @@ If you don’t have a Coinsnap account yet, you can do so via the link shown: [C
 
 ### 2.1. Create a Coinsnap Account ###
 
-Now go to the Coinsnap website at: [https://app.coinsnap.io/register](https://app.coinsnap.io/register) and open an account by entering your email address and a password of your choice.
-
-If you are using a Lightning Wallet with Lightning Login, then you can also open a Coinsnap account with it.
+Now go to the Coinsnap website at: [https://app.coinsnap.io/](https://app.coinsnap.io/) and open an account by entering your email address.
 
 ### 2.2. Confirm email address ###
 
-You will receive an email to the given email address with a confirmation link, which you have to confirm. If you do not find the email, please check your spam folder.
+You will receive an email to the given email address with a 6-digit one-time password, which you have to insert in the confirmation code field. If you do not find the email, please check your spam folder.
 
 ![Confirm email address](https://resources.coinsnap.org/products/drupal/images/screenshot-12.png)
 
@@ -158,17 +164,39 @@ Then please log in to the Coinsnap backend with the appropriate credentials.
 
 ### 2.3. Set up website at Coinsnap ###
 
-After you sign up, you will be asked to provide two pieces of information.
+After you sign up, you will be asked to provide three-step starting wizard to complete information about your website.
 
-![Set up website at Coinsnap](https://resources.coinsnap.org/products/drupal/images/screenshot-13.png)
+![Set up website at Coinsnap](https://resources.coinsnap.org/products/drupal/images/screenshot-20.png)
 
-In the Website Name field, enter the name of your online store that you want customers to see when they check out.
+Step 1. Enter your bonus code if you have one.
+
+![Store Name](https://resources.coinsnap.org/products/drupal/images/screenshot-21.png)
+
+Step 2. In the Store Name field, enter the name of your online store that you want customers to see when they check out.
+
+![Choose how do you want to receive payments](https://resources.coinsnap.org/products/drupal/images/screenshot-22.png)
+
+Step 3. Choose how do you want to receive payments. You have 3 options: Lightning only, Bitcoin + Lightning and Bank settlement.
+
+![Connect your Lightning address](https://resources.coinsnap.org/products/drupal/images/screenshot-23.png)
 
 In the Lightning Address field, enter the Lightning address to which the Bitcoin and Lightning transactions should be forwarded.
 
 A Lightning address is similar to an e-mail address. Lightning payments are forwarded to this Lightning address and paid out. If you don’t have a Lightning address yet, set up a Lightning wallet that will provide you with a Lightning address.
 
-For more information on Lightning addresses and the corresponding Lightning wallet providers, click here: [https://coinsnap.io/lightning-wallet-mit-lightning-adresse/](https://coinsnap.io/lightning-wallet-mit-lightning-adresse/)
+For more information on Lightning addresses and the corresponding Lightning wallet providers, click here: [https://coinsnap.io/blog/how-do-i-get-a-lightning-wallet/](https://coinsnap.io/blog/how-do-i-get-a-lightning-wallet/)
+
+![Connect your Lightning address and xPub key](https://resources.coinsnap.org/products/drupal/images/screenshot-24.png)
+
+If you plan to receive Lightning and on-chain payments, you can connect both Lightning address and xPub, yPub or zPub key.
+
+![Connect your bank account](https://resources.coinsnap.org/products/drupal/images/screenshot-25.png)
+
+If you want to be credited to a bank account, enter your account holder and IBAN. Company data are required for this option.
+
+![Settings part](https://resources.coinsnap.org/products/drupal/images/screenshot-13.png)
+
+You can skip Step 3 on initial configuration of your site in Coinsnap App and configure it later in Settings part.
 
 ## 3. Test Lightning payment in Drupal Demo Store ##
 
@@ -192,8 +220,14 @@ Review your test order and go to payment:
 
 ![Drupal demo store](https://resources.coinsnap.org/products/drupal/images/screenshot-10.png)
 
-The Bitcoin + Lightning payment page is now displayed, offering the payer the option to pay with Bitcoin or also with Lightning. Both methods are integrated in the displayed QR code.
+If you have configured Bitcoin discount, discount will be applied to subtotal payment amount.
+
+The Bitcoin + Lightning payment page is now displayed, offering the payer the option to pay with Bitcoin or also with Lightning. Both methods are integrated in the displayed QR code. 
 
 ![QR code on the Bitcoin payment page](https://resources.coinsnap.org/products/drupal/images/screenshot-16.png)
+
+If you have configured BTCPay server gateway, invoice will be loaded from connected BTCPay server with available payment methods.
+
+![QR code on the Bitcoin payment page](https://resources.coinsnap.org/products/drupal/images/screenshot-26.png)
 
 Pay with your wallet on smartphone or browser extention.

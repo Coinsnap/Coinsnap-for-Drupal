@@ -1,5 +1,5 @@
 drupalcommerce_coinsnap.notify:
-  path: '/payment/notify/coinsnap'
+  path: '/payment/notify/bitcoin_lightning'
   defaults:
     _controller: '\Drupal\drupalcommerce_coinsnap\Controller\PaymentNotificationController::notifyPage'
   requirements:

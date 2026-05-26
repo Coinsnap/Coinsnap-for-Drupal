@@ -4,6 +4,7 @@ description: Coinsnap Commerce Payment Gateway for Drupal Commerce.
 package: Commerce (contrib)
 dependencies:  
   - commerce_payment
+  - commerce_order
 
 # information about project
 version: "8.x-10.x-2.0.8"

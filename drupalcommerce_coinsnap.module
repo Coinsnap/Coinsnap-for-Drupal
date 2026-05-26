@@ -1,0 +1,29 @@
+<?php
+use Drupal\Core\Form\FormStateInterface;
+
+function drupalcommerce_coinsnap_page_attachments(array &$attachments) {
+    if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+        $attachments['#attached']['library'][] = 'drupalcommerce_coinsnap/admin_scripts';
+    }
+}
+
+function drupalcommerce_coinsnap_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+    if (strpos($form_id, 'commerce_checkout') !== FALSE) {
+        foreach ($form['actions'] as &$action) {
+            if (isset($action['#type']) && $action['#type'] === 'submit') {
+                $action['#submit'][] = 'drupalcommerce_coinsnap_checkout_submit';
+            }
+        }
+    }
+}
+
+function drupalcommerce_coinsnap_checkout_submit(array &$form, FormStateInterface $form_state) {
+    $payment = $form_state->getValue('payment_information');
+    $gateway = $payment['payment_method'] ?? NULL;
+    \Drupal::logger('debug')->notice('Payment gateway: ' . $gateway);
+    $order = $form_state->getFormObject()->getOrder();
+    if ($order && $gateway) {
+        $order->set('field_payment_gateway', $gateway);
+        $order->save();
+    }
+}

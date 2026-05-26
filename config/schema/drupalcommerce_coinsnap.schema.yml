@@ -1,9 +1,48 @@
 commerce_payment.commerce_payment_gateway.plugin.coinsnap_redirect:  
   type: commerce_payment_gateway_configuration
   mapping:
+    provider:
+      type: string
+      label: 'Provider'
     store_id:
       type: string
-      label: 'Store ID'
+      label: 'Coinsnap Store ID'
     api_key:
       type: string
-      label: 'API Key'
+      label: 'Coinsnap API Key'
+    webhook:
+      type: string
+      label: 'Coinsnap Webhook (JSON)'
+    btcpay_server_url:
+      type: uri
+      label: 'BTCPay server URL'
+    btcpay_store_id:
+      type: string
+      label: 'BTCPay Store ID'
+    btcpay_api_key:
+      type: string
+      label: 'BTCPay API Key'
+    btcpay_webhook:
+      type: string
+      label: 'BTCPay Server Webhook (JSON)'
+    autoredirect:
+      type: boolean
+      label: 'Redirect after payment'
+    returnurl:
+      type: uri
+      label: 'Return URL'
+    discount_enabled:
+      type: boolean
+      label: 'Discount enabled'
+    discount_type:
+      type: string
+      label: 'Discount type'
+    discount_amount:
+      type: string
+      label: 'Discount amount'
+    discount_amount_limit:
+      type: string
+      label: 'Max discount amount, %'
+    discount_percentage:
+      type: string
+      label: 'Discount amount, %'
