@@ -14,6 +14,8 @@ Coinsnap is **Bitcoin payment software for merchants** and a brand of **Onlinesh
 
 - Accept **Bitcoin and Lightning payments** in Drupal Commerce
 - Support for **Lightning and Bitcoin on-chain**
+- Support for **Coinsnap** and **BTCPay Server**
+- Optional **Bitcoin discount** for checkout payments
 - Native integration with **Drupal Commerce**
 - Payment gateway configuration through Drupal Commerce
 - No own Lightning node or Bitcoin payment server required
@@ -36,7 +38,7 @@ Additional requirements:
 
 - **Drupal Commerce 2.x**
 - **PHP 8.1 or newer**
-- A **Coinsnap merchant account**
+- A **Coinsnap merchant account**, or your own **BTCPay Server**
 
 For Bitcoin settlement, you can use a compatible Bitcoin or Lightning wallet. One option is the [Coinsnap Wallet](https://coinsnap.io/wallet/), which combines a self-custodial Bitcoin wallet with merchant and point-of-sale functionality.
 
@@ -47,9 +49,22 @@ For Bitcoin settlement, you can use a compatible Bitcoin or Lightning wallet. On
 3. Enable the module.
 4. Go to the Drupal Commerce payment gateway settings.
 5. Add or edit the **Coinsnap Payment** gateway.
-6. Enter your Coinsnap **Store ID** and **API key**.
-7. Save the gateway configuration.
-8. Perform a test transaction before going live.
+6. Choose **Coinsnap** or **BTCPay Server** as the payment provider.
+7. Enter the required connection details.
+8. Configure the optional Bitcoin discount if desired.
+9. Save the gateway configuration.
+10. Perform a test transaction before going live.
+
+## Coinsnap or BTCPay Server
+
+The module supports two payment-provider modes:
+
+- **Coinsnap** — for merchants who want to accept Bitcoin without operating their own Bitcoin or Lightning payment infrastructure.
+- **BTCPay Server** — for merchants who operate their own BTCPay Server and want to connect it to Drupal Commerce.
+
+## Bitcoin discount
+
+The Drupal Commerce integration supports an optional Bitcoin discount for customers who choose Bitcoin or Lightning at checkout. Configure the discount in the payment gateway settings according to your store setup.
 
 ## Installation
 
@@ -77,10 +92,11 @@ After installation:
 2. Go to **Commerce → Configuration → Payment → Payment gateways**.
 3. Find or add **Coinsnap Payment**.
 4. Enter the desired gateway name and display name.
-5. Enter your **Coinsnap Store ID**.
-6. Enter your **Coinsnap API key**.
-7. Save the gateway configuration.
-8. Test the checkout flow.
+5. Select **Coinsnap** or **BTCPay Server** as the provider.
+6. Enter the required provider credentials and connection details.
+7. Configure the optional Bitcoin discount if desired.
+8. Save the gateway configuration.
+9. Test the checkout flow.
 
 Your Store ID and API key are available in your Coinsnap merchant account.
 
@@ -109,6 +125,14 @@ The current module metadata declares support for Drupal **8, 9 and 10**.
 ### Can customers pay with both Lightning and Bitcoin on-chain?
 
 Yes. Coinsnap supports Bitcoin payments via both the Lightning Network and Bitcoin on-chain.
+
+### Can I use my own BTCPay Server instead of Coinsnap?
+
+Yes. BTCPay Server is supported as an alternative payment provider for the Drupal Commerce integration.
+
+### Can I offer a Bitcoin discount?
+
+Yes. The integration supports an optional Bitcoin discount for customers who select Bitcoin or Lightning at checkout.
 
 ### Which Bitcoin or Lightning wallets can I use?
 
