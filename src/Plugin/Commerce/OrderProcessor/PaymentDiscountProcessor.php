@@ -10,9 +10,8 @@ class PaymentDiscountProcessor implements OrderProcessorInterface {
 
     public function process(OrderInterface $order) {
         
-        $payment_gateway = $order->get('field_payment_gateway')->value;
-        
-        \Drupal::logger('test')->notice('Discount processor for '.$payment_gateway.' is loaded.');
+        // Commerce's own field; the discount applies only when this gateway is chosen.
+        $payment_gateway = $order->get('payment_gateway')->target_id;
 
         foreach ($order->getAdjustments() as $adjustment) {
             if ($adjustment->getLabel() === 'Bitcoin discount') {

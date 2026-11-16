@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace Coinsnap\Client;
-header('Access-Control-Allow-Origin: *');
 
 use Coinsnap\Result\InvoicePaymentMethod;
 use Coinsnap\Http\CurlClient;

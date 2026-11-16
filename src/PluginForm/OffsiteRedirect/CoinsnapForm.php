@@ -3,6 +3,7 @@ namespace Drupal\drupalcommerce_coinsnap\PluginForm\OffsiteRedirect;
 
 require_once __DIR__ . '/../../Coinsnap/library/loader.php';
 
+use Drupal\commerce_payment\Exception\PaymentGatewayException;
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
@@ -68,31 +69,35 @@ class CoinsnapForm extends PaymentOffsiteForm {
         
             $camount = ($currency === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
             
-            $invoice = $client->createInvoice(
-                $paymentGatewayPlugin->getStoreId(),  
-                $currency,
-		$camount,
-		$order_id,
-		$buyerEmail,
-		$buyerName, 
-		$redirectUrl,
-		COINSNAP_DRUPAL_REFERRAL_CODE,     
-		$metadata,
-                $redirectAutomatically,
-                $walletMessage
-            );
-		
-            $payurl = $invoice->getData()['checkoutLink'] ;		
-		
-            if ($payurl) {	
-                $rData = array();
-                return $this->buildRedirectForm($form, $form_state, $payurl, $rData, PaymentOffsiteForm::REDIRECT_GET);			
+            try {
+                $invoiceData = $client->createInvoice(
+                    $paymentGatewayPlugin->getStoreId(),
+                    $currency,
+                    $camount,
+                    $order_id,
+                    $buyerEmail,
+                    $buyerName,
+                    $redirectUrl,
+                    COINSNAP_DRUPAL_REFERRAL_CODE,
+                    $metadata,
+                    $redirectAutomatically,
+                    $walletMessage
+                )->getData();
+            } catch (\Throwable $e) {
+                \Drupal::logger('commerce_payment')->error('Coinsnap: invoice creation failed for order @id (status @status)', ['@id' => $order_id, '@status' => (int) $e->getCode()]);
+                $invoiceData = [];
             }
-            else {			
-                $errorMessage = 'Invoice request error';
-                \Drupal::logger('commerce_payment')->error('Invoice request error: '.$e->getMessage());
-                throw new PaymentGatewayException('Invoice request error: '.$errorMessage);
+
+            if (empty($invoiceData['checkoutLink']) || empty($invoiceData['id'])) {
+                throw new PaymentGatewayException('The payment could not be started. Please try again later.');
             }
+
+            // Only invoices recorded on the order can pay it, and only for the amount and currency sent.
+            $invoices = $order->getData('coinsnap_invoices') ?? [];
+            $invoices[(string) $invoiceData['id']] = ['amount' => $camount->__toString(), 'currency' => $currency];
+            $order->setData('coinsnap_invoices', $invoices)->save();
+
+            return $this->buildRedirectForm($form, $form_state, $invoiceData['checkoutLink'], [], PaymentOffsiteForm::REDIRECT_GET);
         }
         else {
 
@@ -122,7 +127,6 @@ class CoinsnapForm extends PaymentOffsiteForm {
                 try {
                     $storePaymentMethods = $store->getStorePaymentMethods($paymentGatewayPlugin->getStoreId());
                     
-                    \Drupal::logger('commerce_payment')->notice('Store Payment Methods: '.print_r($storePaymentMethods,true));
                     
                     if ($storePaymentMethods['code'] === 200 && !isset($storePaymentMethods['result']['error'])){
                         if (!$storePaymentMethods['result']['onchain'] && !$storePaymentMethods['result']['lightning']) {
