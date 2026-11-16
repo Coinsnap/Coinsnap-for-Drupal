@@ -21,6 +21,7 @@ use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm;
 use Drupal\Core\Url;
 use Drupal\drupalcommerce_coinsnap\Webhook\InvoiceDecision;
 use Drupal\drupalcommerce_coinsnap\Webhook\Signature;
+use Drupal\drupalcommerce_coinsnap\Webhook\BtcpayKeyCheck;
 use Symfony\Component\HttpFoundation\Response;
 use Drupal\commerce_payment\Exception\PaymentGatewayException;
 
@@ -244,6 +245,13 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
         $field = ($values['provider'] ?? '') === 'btcpay' ? 'btcpay_api_key' : 'api_key';
         if (trim((string) ($values[$field] ?? '')) === '') {
             $form_state->setErrorByName($field, $this->t('Enter the API key.'));
+            return;
+        }
+        if ($field === 'btcpay_api_key') {
+            $problem = BtcpayKeyCheck::problem(trim((string) $values['btcpay_server_url']), trim((string) $values['btcpay_api_key']), trim((string) ($values['btcpay_store_id'] ?? '')));
+            if ($problem !== null) {
+                $form_state->setErrorByName('btcpay_api_key', $problem);
+            }
         }
     }
 
