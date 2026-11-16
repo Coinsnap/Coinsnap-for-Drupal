@@ -419,6 +419,12 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             return new Response('OK', 200);
         }
 
+        // The cart can change after checkout; an invoice for the old total must not pay the new one.
+        if ($decision === InvoiceDecision::PAID && isset($expected['order_total']) && !$this->sameTotal($order, $expected)) {
+            $this->logSecurity('order total changed', $invoiceId);
+            return new Response('OK', 200);
+        }
+
         $lock = 'coinsnap_order_' . $order->id();
         if (!$this->acquireLock($lock)) {
             return new Response('Retry', 503);
@@ -480,6 +486,13 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             $this->logInfo('status processing', $invoiceId);
         }
         $payment->save();
+    }
+
+    private function sameTotal($order, array $expected): bool
+    {
+        $total = $order->getTotalPrice();
+        return $total->getCurrencyCode() === (string) ($expected['order_currency'] ?? '')
+            && InvoiceDecision::toMinorUnits((string) $total->getNumber()) === InvoiceDecision::toMinorUnits((string) $expected['order_total']);
     }
 
     protected function fetchInvoice(string $invoiceId): array

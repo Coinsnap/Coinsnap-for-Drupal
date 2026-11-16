@@ -94,7 +94,12 @@ class CoinsnapForm extends PaymentOffsiteForm {
 
             // Only invoices recorded on the order can pay it, and only for the amount and currency sent.
             $invoices = $order->getData('coinsnap_invoices') ?? [];
-            $invoices[(string) $invoiceData['id']] = ['amount' => $camount->__toString(), 'currency' => $currency];
+            $invoices[(string) $invoiceData['id']] = [
+                'amount' => $camount->__toString(),
+                'currency' => $currency,
+                'order_total' => (string) $order->getTotalPrice()->getNumber(),
+                'order_currency' => $order->getTotalPrice()->getCurrencyCode(),
+            ];
             $order->setData('coinsnap_invoices', $invoices)->save();
 
             return $this->buildRedirectForm($form, $form_state, $invoiceData['checkoutLink'], [], PaymentOffsiteForm::REDIRECT_GET);
