@@ -109,12 +109,11 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             ]
         ];
 
+        // Password fields are never filled in: the stored key is not sent to the browser.
         $form['api_key'] = [
-            '#type' => 'textfield',
+            '#type' => 'password',
             '#title' => $this->t('Coinsnap API Key'),
-            '#default_value' => $api_key,
-            '#description' => $this->t('API Key from Coinsnap'),
-            '#required' => TRUE,
+            '#description' => $this->keyHint($api_key, $this->t('API Key from Coinsnap')),
             '#attributes' => [
                 'data-provider' => 'coinsnap'
             ]
@@ -143,11 +142,9 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
         ];
 
         $form['btcpay_api_key'] = [
-            '#type' => 'textfield',
+            '#type' => 'password',
             '#title' => $this->t('BTCPay API Key'),
-            '#default_value' => $btcpay_api_key,
-            '#description' => $this->t('Your BTCPay server API Key'),
-            '#required' => TRUE,
+            '#description' => $this->keyHint($btcpay_api_key, $this->t('Your BTCPay server API Key')),
             '#attributes' => [
                 'data-provider' => 'btcpay'
             ]
@@ -227,12 +224,35 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
 
     
 
+    private function keyHint(string $stored, $fallback) {
+        return $stored === '' ? $fallback : $this->t('A key ending in @tail is saved. Leave empty to keep it.', ['@tail' => substr($stored, -4)]);
+    }
+
+    // Empty key fields keep the stored keys; a BTCPay key is never kept for a different server.
+    private function keepStoredKeys(array $form, FormStateInterface $form_state): void {
+        $parents = $form['#parents'];
+        $values = $form_state->getValue($parents);
+        if (trim((string) ($values['api_key'] ?? '')) === '') {
+            $form_state->setValue(array_merge($parents, ['api_key']), (string) ($this->configuration['api_key'] ?? ''));
+        }
+        if (trim((string) ($values['btcpay_api_key'] ?? '')) === '') {
+            $sameServer = rtrim(trim((string) ($values['btcpay_server_url'] ?? '')), '/') === rtrim((string) ($this->configuration['btcpay_server_url'] ?? ''), '/');
+            $form_state->setValue(array_merge($parents, ['btcpay_api_key']), $sameServer ? (string) ($this->configuration['btcpay_api_key'] ?? '') : '');
+        }
+        $values = $form_state->getValue($parents);
+        $field = ($values['provider'] ?? '') === 'btcpay' ? 'btcpay_api_key' : 'api_key';
+        if (trim((string) ($values[$field] ?? '')) === '') {
+            $form_state->setErrorByName($field, $this->t('Enter the API key.'));
+        }
+    }
+
     /**
      * {@inheritdoc}
      */
     public function validateConfigurationForm(array &$form, FormStateInterface $form_state)
     {
         parent::validateConfigurationForm($form, $form_state);
+        $this->keepStoredKeys($form, $form_state);
 
         if (!$form_state->getErrors() && $form_state->isSubmitted()) {
             $values = $form_state->getValue($form['#parents']);

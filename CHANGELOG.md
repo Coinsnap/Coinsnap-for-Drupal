@@ -7,6 +7,7 @@
 - Security: If the order total changes after the invoice was created (the cart was edited after going back from the payment page), the old invoice no longer completes the payment.
 - Security: A completed payment is never voided by a later webhook, and each invoice completes a payment once. BTCPay invoices marked settled by hand are not accepted.
 - Security: Webhook bodies, request headers (including the signature) and the webhook secret are no longer written to the Drupal log, and the webhook reply no longer echoes the request.
+- Security: The API key fields no longer show the saved key; leave them empty to keep it. A BTCPay key is not kept when the BTCPay Server URL changes.
 - Security: The library no longer sends an `Access-Control-Allow-Origin: *` header on every page that loads it.
 - Fix: The exchange rate lookup gives up after 3 tries instead of retrying forever, which could hang checkout.
 - Fix: The Bitcoin discount read a field that Commerce does not have; it now uses the order's payment gateway.
