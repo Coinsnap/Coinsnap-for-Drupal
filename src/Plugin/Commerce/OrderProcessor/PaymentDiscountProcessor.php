@@ -19,9 +19,8 @@ class PaymentDiscountProcessor implements OrderProcessorInterface {
             }
         }
         
-        if($payment_gateway === 'bitcoin_lightning'){
-            
-            $gateway = \Drupal::entityTypeManager()->getStorage('commerce_payment_gateway')->load($payment_gateway);
+        $gateway = $payment_gateway ? \Drupal::entityTypeManager()->getStorage('commerce_payment_gateway')->load($payment_gateway) : null;
+        if($gateway && $gateway->getPluginId() === 'coinsnap'){
             $paymentGatewayPlugin = $gateway->getPlugin();
             
             $discountSettings = $paymentGatewayPlugin->getDiscount();

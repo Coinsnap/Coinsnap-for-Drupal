@@ -22,6 +22,7 @@ use Drupal\Core\Url;
 use Drupal\drupalcommerce_coinsnap\Webhook\InvoiceDecision;
 use Drupal\drupalcommerce_coinsnap\Webhook\Signature;
 use Symfony\Component\HttpFoundation\Response;
+use Drupal\commerce_payment\Exception\PaymentGatewayException;
 
 /**
  * Provides the coinsnap payment gateway
@@ -56,7 +57,7 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             'autoredirect' => TRUE,
             'returnurl' => '',
             'discount_enabled' => TRUE,
-            'discount_type' => 'amount',
+            'discount_type' => 'fixed',
             'discount_amount' => '',
             'discount_amount_limit' => '',
             'discount_percentage' => '',
@@ -80,7 +81,7 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
         $returnurl = !empty($this->configuration['returnurl']) ? $this->configuration['returnurl'] : '';
         
         $discount_enabled = !empty($this->configuration['discount_enabled']) && $this->configuration['discount_enabled'] > 0 ? TRUE : FALSE;
-        $discount_type = !empty($this->configuration['discount_type']) ? $this->configuration['discount_type'] : 'amount';
+        $discount_type = !empty($this->configuration['discount_type']) ? $this->configuration['discount_type'] : 'fixed';
         $discount_amount = !empty($this->configuration['discount_amount']) ? $this->configuration['discount_amount'] : '';
         $discount_amount_limit = !empty($this->configuration['discount_amount_limit']) ? $this->configuration['discount_amount_limit'] : '';
         $discount_percentage = !empty($this->configuration['discount_percentage']) ? $this->configuration['discount_percentage'] : '';
@@ -365,15 +366,37 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
      * {@inheritdoc}
      */
     public function onReturn(OrderInterface $order, Request $request){
-        $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-    	$payment = $payment_storage->create([
-      		'state' => 'pending',
-      		'amount' => $order->getBalance(),
-      		'payment_gateway' => $this->entityId,
-      		'order_id' => $order->id(),      
-      		'remote_state' => 'pending',
-    	]);
-    	$payment->save();
+        // The order is placed only once its latest invoice is paid or being paid; the webhook completes the payment.
+        $recorded = $order->getData('coinsnap_invoices');
+        $invoiceId = is_array($recorded) && $recorded !== [] ? (string) array_key_last($recorded) : '';
+        if ($invoiceId !== '') {
+            try {
+                $invoice = $this->fetchInvoice($invoiceId);
+            } catch (\Throwable $e) {
+                // The API could not be asked: let the order through as pending; the webhook decides.
+                $invoice = null;
+            }
+            if (is_array($invoice)) {
+                $expected = $recorded[$invoiceId];
+                $decision = InvoiceDecision::decide($invoice, $this->getProvider() === 'btcpay', (string) ($expected['amount'] ?? ''), (string) ($expected['currency'] ?? ''));
+                if (!in_array($decision, [InvoiceDecision::PAID, InvoiceDecision::PROCESSING], true)) {
+                    throw new PaymentGatewayException('The payment has not been received. Please complete the payment or choose another payment method.');
+                }
+            }
+        }
+        foreach ($this->paymentStorage()->loadByProperties(['order_id' => $order->id(), 'payment_gateway' => $this->entityId]) as $existing) {
+            if ($invoiceId === '' || (string) $existing->getRemoteId() === $invoiceId || (string) $existing->getRemoteId() === '') {
+                return;
+            }
+        }
+        $this->paymentStorage()->create([
+            'state' => 'pending',
+            'amount' => $order->getBalance(),
+            'payment_gateway' => $this->entityId,
+            'order_id' => $order->id(),
+            'remote_id' => $invoiceId,
+            'remote_state' => 'pending',
+        ])->save();
     }
 	
     /**
@@ -472,10 +495,19 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             }
         }
 
+        // Refunded or voided by the merchant: a later webhook never brings it back.
+        $final = ['completed', 'partially_refunded', 'refunded', 'authorization_voided'];
         $payment = null;
         foreach ($payments as $existing) {
             $remoteId = (string) $existing->getRemoteId();
-            if ($existing->getState()->getId() !== 'completed' && ($remoteId === $invoiceId || $remoteId === '')) {
+            if ($remoteId === $invoiceId && in_array($existing->getState()->getId(), $final, true)) {
+                $this->logInfo('no change from ' . $existing->getState()->getId(), $invoiceId);
+                return;
+            }
+        }
+        foreach ($payments as $existing) {
+            $remoteId = (string) $existing->getRemoteId();
+            if (!in_array($existing->getState()->getId(), $final, true) && ($remoteId === $invoiceId || $remoteId === '')) {
                 $payment = $existing;
                 break;
             }
