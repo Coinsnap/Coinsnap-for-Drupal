@@ -8,6 +8,9 @@ use Drupal\field\Entity\FieldConfig;
  */
 function drupalcommerce_coinsnap_install() {
 
+    // A new installation has no orders from before invoices were recorded.
+    \Drupal::state()->set('drupalcommerce_coinsnap.legacy_until', time());
+
     if (!FieldStorageConfig::loadByName('commerce_order', 'field_payment_gateway')) {
         FieldStorageConfig::create([
             'field_name' => 'field_payment_gateway',
@@ -25,4 +28,21 @@ function drupalcommerce_coinsnap_install() {
             'label' => 'Payment Gateway',
         ])->save();
     }
+}
+
+/**
+ * Orders started before 1.2.0 have no invoice record: accept their webhooks for one more day only.
+ */
+function drupalcommerce_coinsnap_update_10200() {
+    if (\Drupal::state()->get('drupalcommerce_coinsnap.legacy_until') === null) {
+        \Drupal::state()->set('drupalcommerce_coinsnap.legacy_until', time() + 86400);
+    }
+    return t('Coinsnap: webhooks for orders without an invoice record are accepted for 24 hours. Open each Coinsnap payment gateway, check "Site address for the webhook" and save it, so its webhook is registered again.');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function drupalcommerce_coinsnap_uninstall() {
+    \Drupal::state()->delete('drupalcommerce_coinsnap.legacy_until');
 }

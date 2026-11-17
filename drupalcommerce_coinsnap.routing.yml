@@ -1,7 +1,0 @@
-drupalcommerce_coinsnap.notify:
-  path: '/payment/notify/bitcoin_lightning'
-  defaults:
-    _controller: '\Drupal\drupalcommerce_coinsnap\Controller\PaymentNotificationController::notifyPage'
-  requirements:
-    _access: 'TRUE'
-  

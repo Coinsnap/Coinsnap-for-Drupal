@@ -134,6 +134,8 @@ Or You can download Coinsnap payment module for Drupal from Coinsnap Github repo
 ![Coinsnap module](https://resources.coinsnap.org/products/drupal/images/screenshot-04.png)
 2.2.2. Enter name and display name of payment method, configure Coinsnap payment gateway info (Store Id and API Key), set needed options and press "Save" button. 
 
+Check "Site address for the webhook": it must be the public address of your shop (for example https://shop.example.com). The webhook is registered when you save, at `<site address>/payment/notify/<machine name of the payment gateway>`.
+
 ![Coinsnap module settings](https://resources.coinsnap.org/products/drupal/images/screenshot-05-1.png)
 
 If you want to receive payments using your BTCPay server gateway you need to configure BTCPay server settings (Server URL, Store Id and API Key). 

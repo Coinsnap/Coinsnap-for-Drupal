@@ -55,6 +55,7 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             'btcpay_store_id' => '',
             'btcpay_api_key' => '',
             'btcpay_webhook' => '',
+            'webhook_base_url' => '',
             'autoredirect' => TRUE,
             'returnurl' => '',
             'discount_enabled' => TRUE,
@@ -150,6 +151,15 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             '#attributes' => [
                 'data-provider' => 'btcpay'
             ]
+        ];
+
+        // The webhook URL is built from this saved address, never from the Host header of a request.
+        $form['webhook_base_url'] = [
+            '#type' => 'url',
+            '#title' => $this->t('Site address for the webhook'),
+            '#default_value' => !empty($this->configuration['webhook_base_url']) ? $this->configuration['webhook_base_url'] : $this->requestBaseUrl(),
+            '#description' => $this->t('The public address of this shop, for example https://shop.example.com. The payment server sends payment notifications to this address.'),
+            '#required' => TRUE,
         ];
 
         $form['autoredirect'] = [
@@ -269,16 +279,30 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             $api_url = ($values['provider'] === 'btcpay')? $values['btcpay_server_url'] : COINSNAP_SERVER_URL;
             $api_key = ($values['provider'] === 'btcpay')? $values['btcpay_api_key'] : $values['api_key'];
             $store_id = ($values['provider'] === 'btcpay')? $values['btcpay_store_id'] : $values['store_id'];
-            
+
+            $baseUrl = self::normalizeBaseUrl((string) ($values['webhook_base_url'] ?? ''));
+            $gatewayId = $this->gatewayIdFromForm($form_state);
+            if ($baseUrl === null) {
+                $form_state->setErrorByName('webhook_base_url', $this->t('Enter the address of this shop, starting with https:// or http://.'));
+                return;
+            }
+            if ($gatewayId === '') {
+                $form_state->setErrorByName('id', $this->t('Enter the machine name of the payment gateway.'));
+                return;
+            }
+            $form_state->setValue(array_merge($form['#parents'], ['webhook_base_url']), $baseUrl);
+            $webhookUrl = $this->getWebhookUrl($baseUrl, $gatewayId);
+
             try {
-                $webhookExists = $this->webhookExists($api_url, $api_key, $store_id, $values['provider']);
+                $webhookExists = $this->webhookExists($api_url, $api_key, $store_id, $values['provider'], $webhookUrl);
             } catch (\Throwable $e) {
                 // An API error is not "no webhook": registering now would replace a working secret.
                 $form_state->setErrorByName('api_key', $values['provider'] . ': the server could not be reached. Please check the Store ID and API key and try again.');
                 return;
             }
             if (! $webhookExists) {
-                    if ($webhook_data = $this->registerWebhook($api_url, $api_key, $store_id, $values['provider'])) {
+                    if ($webhook_data = $this->registerWebhook($api_url, $api_key, $store_id, $values['provider'], $webhookUrl)) {
+                        $this->deleteStaleWebhooks($api_url, $api_key, $store_id, (string) $webhook_data['id']);
                         if($values['provider'] === 'btcpay'){
                             $form_state->set('btcpay_webhook',json_encode($webhook_data));
                         }
@@ -299,9 +323,15 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
      */
     public function submitConfigurationForm(array &$form, FormStateInterface $form_state)
     {
+        // The parent empties the configuration; the stored webhooks (and their secrets) have no form field.
+        $storedWebhooks = [
+            'webhook' => (string) ($this->configuration['webhook'] ?? ''),
+            'btcpay_webhook' => (string) ($this->configuration['btcpay_webhook'] ?? ''),
+        ];
         parent::submitConfigurationForm($form, $form_state);
         if (!$form_state->getErrors()) {
             $values = $form_state->getValue($form['#parents']);
+            $this->configuration += $storedWebhooks;
             
             $this->configuration['provider'] = $values['provider'];
             $this->configuration['store_id'] = $values['store_id'];
@@ -309,7 +339,8 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             $this->configuration['btcpay_server_url'] = $values['btcpay_server_url'];
             $this->configuration['btcpay_store_id'] = $values['btcpay_store_id'];
             $this->configuration['btcpay_api_key'] = $values['btcpay_api_key'];
-            
+            $this->configuration['webhook_base_url'] = $values['webhook_base_url'];
+
             $this->configuration['autoredirect'] = $values['autoredirect'];
             $this->configuration['returnurl'] = $values['returnurl'];
             
@@ -374,26 +405,36 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
      * {@inheritdoc}
      */
     public function onReturn(OrderInterface $order, Request $request){
-        // The order is placed only once its latest invoice is paid or being paid; the webhook completes the payment.
+        // Opening the return URL proves nothing. The order is placed only when the API says one of its
+        // invoices is paid or being paid; otherwise the webhook completes the payment and Commerce
+        // places the order then.
         $recorded = $order->getData('coinsnap_invoices');
-        $invoiceId = is_array($recorded) && $recorded !== [] ? (string) array_key_last($recorded) : '';
-        if ($invoiceId !== '') {
+        $recorded = is_array($recorded) ? $recorded : [];
+        // Newest first: after a retried checkout the customer may have paid an earlier invoice.
+        foreach (array_slice(array_reverse($recorded, true), 0, 3, true) as $invoiceId => $expected) {
+            $invoiceId = (string) $invoiceId;
             try {
                 $invoice = $this->fetchInvoice($invoiceId);
             } catch (\Throwable $e) {
-                // The API could not be asked: let the order through as pending; the webhook decides.
-                $invoice = null;
+                $this->logInfo('return: invoice not confirmed by API', $invoiceId);
+                continue;
             }
-            if (is_array($invoice)) {
-                $expected = $recorded[$invoiceId];
-                $decision = InvoiceDecision::decide($invoice, $this->getProvider() === 'btcpay', (string) ($expected['amount'] ?? ''), (string) ($expected['currency'] ?? ''));
-                if (!in_array($decision, [InvoiceDecision::PAID, InvoiceDecision::PROCESSING], true)) {
-                    throw new PaymentGatewayException('The payment has not been received. Please complete the payment or choose another payment method.');
-                }
+            $expected = is_array($expected) ? $expected : [];
+            $decision = InvoiceDecision::decide($invoice, $this->getProvider() === 'btcpay', (string) ($expected['amount'] ?? ''), (string) ($expected['currency'] ?? ''));
+            if (in_array($decision, [InvoiceDecision::PAID, InvoiceDecision::PROCESSING], true)
+                && (!isset($expected['order_total']) || $this->sameTotal($order, $expected))) {
+                $this->recordPendingPayment($order, $invoiceId);
+                return;
             }
         }
+        \Drupal::messenger()->addWarning($this->t('If you have already paid, your order will be confirmed automatically as soon as the payment is confirmed.'));
+        throw new PaymentGatewayException('Coinsnap: the payment for this order is not confirmed yet.');
+    }
+
+    private function recordPendingPayment(OrderInterface $order, string $invoiceId): void
+    {
         foreach ($this->paymentStorage()->loadByProperties(['order_id' => $order->id(), 'payment_gateway' => $this->entityId]) as $existing) {
-            if ($invoiceId === '' || (string) $existing->getRemoteId() === $invoiceId || (string) $existing->getRemoteId() === '') {
+            if ((string) $existing->getRemoteId() === $invoiceId || (string) $existing->getRemoteId() === '') {
                 return;
             }
         }
@@ -458,7 +499,12 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             $this->logSecurity('invoice not created for this order', $invoiceId);
             return new Response('OK', 200);
         }
-        // Orders placed before 1.2.0 have no record; check against the order total.
+        // Orders started before 1.2.0 have no record. They are accepted, checked against the order
+        // total, only for one day after the upgrade, when every invoice created before it has expired.
+        if (!is_array($recorded) && !$this->legacyWindowOpen()) {
+            $this->logInfo('no invoice record for order', $invoiceId);
+            return new Response('OK', 200);
+        }
         $expected = is_array($recorded) ? $recorded[$invoiceId] : [
             'amount' => number_format(round((float) $order->getTotalPrice()->getNumber(), 2), 2, '.', ''),
             'currency' => $order->getTotalPrice()->getCurrencyCode(),
@@ -626,8 +672,50 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
         return $order;
     }
 
-    public function getWebhookUrl() {		        
-        return Url::fromRoute('drupalcommerce_coinsnap.notify', [], ['absolute' => true])->toString();
+    // Commerce's own notification route, one URL per gateway, on the site address saved in the settings.
+    public function getWebhookUrl(?string $baseUrl = null, ?string $gatewayId = null): string {
+        $baseUrl = $baseUrl ?? self::normalizeBaseUrl((string) ($this->configuration['webhook_base_url'] ?? '')) ?? '';
+        $gatewayId = $gatewayId ?? (string) $this->entityId;
+        $path = Url::fromRoute('commerce_payment.notify', ['commerce_payment_gateway' => $gatewayId])->getInternalPath();
+        return $baseUrl . '/' . ltrim($path, '/');
+    }
+
+    // Scheme, host, optional port and path; no query, fragment or credentials. Null when it is not a URL.
+    public static function normalizeBaseUrl(string $url): ?string {
+        $url = trim($url);
+        $parts = parse_url($url);
+        if (!is_array($parts) || !in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true) || empty($parts['host'])
+            || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) {
+            return null;
+        }
+        return strtolower($parts['scheme']) . '://' . strtolower($parts['host']) . (isset($parts['port']) ? ':' . (int) $parts['port'] : '') . rtrim((string) ($parts['path'] ?? ''), '/');
+    }
+
+    // Only a default for the settings form, which the admin sees and saves.
+    private function requestBaseUrl(): string {
+        $request = \Drupal::request();
+        return $request->getSchemeAndHttpHost() . $request->getBasePath();
+    }
+
+    private function gatewayIdFromForm(FormStateInterface $form_state): string {
+        if (!empty($this->entityId)) {
+            return (string) $this->entityId;
+        }
+        $complete = $form_state instanceof \Drupal\Core\Form\SubformStateInterface ? $form_state->getCompleteFormState() : $form_state;
+        $id = $complete->getValue('id');
+        return is_string($id) && preg_match('/^[a-z0-9_]+$/', $id) ? $id : '';
+    }
+
+    // A state value (database), not a cache: the window must not reopen or vanish.
+    protected function legacyWindowOpen(): bool {
+        $state = \Drupal::state();
+        $until = $state->get('drupalcommerce_coinsnap.legacy_until');
+        if ($until === null) {
+            // The update hook has not run yet: start the window now.
+            $until = time() + 86400;
+            $state->set('drupalcommerce_coinsnap.legacy_until', $until);
+        }
+        return time() < (int) $until;
     }
     
     public function getProvider(){
@@ -664,41 +752,59 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
         ];
     }
 
+    // Webhooks of this gateway that are replaced once the new one is registered.
+    private array $staleWebhookIds = [];
+
     // Throws when the API can't be asked; the caller must not treat that as "no webhook".
-    function webhookExists(string $apiUrl, string $apiKey, string $storeId, string $provider): bool {
+    function webhookExists(string $apiUrl, string $apiKey, string $storeId, string $provider, string $webhookUrl): bool {
         $whClient = new \Coinsnap\Client\Webhook($apiUrl, $apiKey);
         $stored = json_decode((string) (($provider === 'btcpay') ? $this->configuration['btcpay_webhook'] : $this->configuration['webhook']), true);
+        $this->staleWebhookIds = [];
 
         if (is_array($stored) && !empty($stored['id'])) {
             try {
                 $existing = $whClient->getWebhook($storeId, (string) $stored['id']);
-                if (strpos((string) ($existing->getData()['url'] ?? ''), $this->getWebhookUrl()) !== false) {
+                if ((string) ($existing->getData()['url'] ?? '') === $webhookUrl) {
                     return true;
                 }
+                // Ours, but for an old address (for example the module's former route).
+                $this->staleWebhookIds[] = (string) $stored['id'];
             } catch (\Coinsnap\Exception\RequestException $e) {
                 if (!in_array($e->getCode(), [400, 404], true)) {
                     throw $e;
                 }
             }
         }
-        // Remove webhooks of ours whose secret this configuration does not hold.
+        // Webhooks for this gateway's URL whose secret this configuration does not hold.
         foreach ($whClient->getWebhooks($storeId) as $webhook) {
-            if (strpos((string) $webhook->getData()['url'], $this->getWebhookUrl()) !== false) {
-                try {
-                    $whClient->deleteWebhook($storeId, $webhook->getData()['id']);
-                } catch (\Throwable $e) {
-                    \Drupal::logger('commerce_payment')->warning('Coinsnap: stale webhook could not be deleted');
-                }
+            if ((string) ($webhook->getData()['url'] ?? '') === $webhookUrl) {
+                $this->staleWebhookIds[] = (string) $webhook->getData()['id'];
             }
         }
         return false;
     }
 
-    public function registerWebhook(string $apiUrl, string $apiKey, string $storeId, string $provider = 'coinsnap'){
+    // Called only after the new webhook is registered, so a failed registration keeps the old one.
+    private function deleteStaleWebhooks(string $apiUrl, string $apiKey, string $storeId, string $keepId): void {
+        $whClient = new \Coinsnap\Client\Webhook($apiUrl, $apiKey);
+        foreach (array_unique($this->staleWebhookIds) as $id) {
+            if ($id === '' || $id === $keepId) {
+                continue;
+            }
+            try {
+                $whClient->deleteWebhook($storeId, $id);
+            } catch (\Throwable $e) {
+                \Drupal::logger('commerce_payment')->warning('Coinsnap: stale webhook could not be deleted');
+            }
+        }
+        $this->staleWebhookIds = [];
+    }
+
+    public function registerWebhook(string $apiUrl, string $apiKey, string $storeId, string $provider, string $webhookUrl){
         try {
             $whClient = new \Coinsnap\Client\Webhook($apiUrl, $apiKey);
             $webhook_events = ($provider === 'btcpay')? self::BTCPAY_WEBHOOK_EVENTS : self::COINSNAP_WEBHOOK_EVENTS;
-            $webhook = $whClient->createWebhook($storeId, $this->getWebhookUrl(), $webhook_events, null)->getData();
+            $webhook = $whClient->createWebhook($storeId, $webhookUrl, $webhook_events, null)->getData();
         }
         catch (\Throwable $e) {
             \Drupal::logger('commerce_payment')->error('Coinsnap: webhook could not be registered (status @status)', ['@status' => (int) $e->getCode()]);
@@ -707,6 +813,6 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
         if (empty($webhook['id']) || empty($webhook['secret'])) {
             return false;
         }
-        return ['id' => $webhook['id'], 'secret' => $webhook['secret'], 'url' => $webhook['url'] ?? $this->getWebhookUrl()];
+        return ['id' => $webhook['id'], 'secret' => $webhook['secret'], 'url' => $webhook['url'] ?? $webhookUrl];
     }
 }

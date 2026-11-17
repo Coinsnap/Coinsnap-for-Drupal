@@ -25,6 +25,9 @@ commerce_payment.commerce_payment_gateway.plugin.coinsnap_redirect:
     btcpay_webhook:
       type: string
       label: 'BTCPay Server Webhook (JSON)'
+    webhook_base_url:
+      type: uri
+      label: 'Site address for the webhook'
     autoredirect:
       type: boolean
       label: 'Redirect after payment'

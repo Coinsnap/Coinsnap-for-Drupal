@@ -90,7 +90,7 @@ class Store extends AbstractClient{
             return new \Coinsnap\Result\Store(array('code' => $response->getStatus(), 'result' => $result));
         }
         else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), (int)esc_html($response->getStatus()), esc_html($response->getBody()));
+            throw $this->getExceptionByStatusCode($method, $url, (int)$response->getStatus(), $response->getBody());
         }
     }
     
