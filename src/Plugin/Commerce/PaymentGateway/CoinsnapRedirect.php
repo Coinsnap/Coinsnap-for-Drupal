@@ -70,7 +70,8 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
     public function buildConfigurationForm(array $form, FormStateInterface $form_state){
         
         $form = parent::buildConfigurationForm($form, $form_state);
-	unset($form['mode']);
+        // Hidden, not removed: the parent's submit reads the value.
+        $form['mode']['#access'] = FALSE;
 
         $provider = !empty($this->configuration['provider']) ? $this->configuration['provider'] : 'coinsnap';
         $store_id = !empty($this->configuration['store_id']) ? $this->configuration['store_id'] : '';
@@ -106,7 +107,6 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             '#title' => $this->t('Coinsnap Store ID'),
             '#default_value' => $store_id,
             '#description' => $this->t('Store ID from Coinsnap'),
-            '#required' => TRUE,
             '#attributes' => [
                 'data-provider' => 'coinsnap'
             ]
@@ -127,7 +127,6 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             '#title' => $this->t('BTCPay server URL'),
             '#default_value' => $btcpay_server_url,
             '#description' => $this->t('Your BTCPay server URL'),
-            '#required' => TRUE,
             '#attributes' => [
                 'data-provider' => 'btcpay'
             ]
@@ -138,7 +137,6 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             '#title' => $this->t('BTCPay Store ID'),
             '#default_value' => $btcpay_store_id,
             '#description' => $this->t('Your BTCPay server Store ID'),
-            '#required' => TRUE,
             '#attributes' => [
                 'data-provider' => 'btcpay'
             ]
@@ -252,6 +250,16 @@ class CoinsnapRedirect extends OffsitePaymentGatewayBase {
             $form_state->setValue(array_merge($parents, ['btcpay_api_key']), $sameServer ? (string) ($this->configuration['btcpay_api_key'] ?? '') : '');
         }
         $values = $form_state->getValue($parents);
+        // Only the chosen provider's fields are required; the other provider's fields are hidden in the form.
+        $required = ($values['provider'] ?? '') === 'btcpay'
+            ? ['btcpay_server_url' => $this->t('BTCPay server URL'), 'btcpay_store_id' => $this->t('BTCPay Store ID')]
+            : ['store_id' => $this->t('Coinsnap Store ID')];
+        foreach ($required as $name => $label) {
+            if (trim((string) ($values[$name] ?? '')) === '') {
+                $form_state->setErrorByName(implode('][', array_merge($parents, [$name])), $this->t('@name field is required.', ['@name' => $label]));
+                return;
+            }
+        }
         $field = ($values['provider'] ?? '') === 'btcpay' ? 'btcpay_api_key' : 'api_key';
         if (trim((string) ($values[$field] ?? '')) === '') {
             $form_state->setErrorByName($field, $this->t('Enter the API key.'));
