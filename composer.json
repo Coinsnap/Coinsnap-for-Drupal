@@ -1,9 +1,10 @@
 {
     "name": "drupal/drupalcommerce-coinsnap",
-	"type": "drupal-module",
-    "description": "Coinsnap Commerce plugin for Drupal",    
+    "type": "drupal-module",
+    "description": "Bitcoin Lightning payments for Drupal Commerce 2+",
+    "homepage" : "https://www.drupal.org/project/drupalcommerce_coinsnap/",
     "require": {
-    "drupal/commerce": "^2.0"
-  	},
-  	"license": "GPL-2.0+"
+        "drupal/commerce" : "~2 || ~3"
+    },
+    "license": "GPL-2.0+"
 }

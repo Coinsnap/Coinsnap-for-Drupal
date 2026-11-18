@@ -51,6 +51,7 @@ For Bitcoin settlement, you can use a compatible Bitcoin or Lightning wallet. On
 5. Add or edit the **Coinsnap Payment** gateway.
 6. Choose **Coinsnap** or **BTCPay Server** as the payment provider.
 7. Enter the required connection details.
+   Check **Site address for the webhook**: it must be the public address of your shop (for example `https://shop.example.com`). The webhook is registered when you save, at `<site address>/payment/notify/<machine name of the payment gateway>`.
 8. Configure the optional Bitcoin discount if desired.
 9. Save the gateway configuration.
 10. Perform a test transaction before going live.

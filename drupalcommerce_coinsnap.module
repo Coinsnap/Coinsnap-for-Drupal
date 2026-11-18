@@ -1,0 +1,8 @@
+<?php
+
+function drupalcommerce_coinsnap_page_attachments(array &$attachments) {
+    if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+        $attachments['#attached']['library'][] = 'drupalcommerce_coinsnap/admin_scripts';
+    }
+}
+

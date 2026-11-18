@@ -1,0 +1,5 @@
+services:
+  drupalcommerce_coinsnap.order_processor:
+    class: Drupal\drupalcommerce_coinsnap\Plugin\Commerce\OrderProcessor\PaymentDiscountProcessor
+    tags:
+      - { name: commerce_order.order_processor, priority: 100 }
