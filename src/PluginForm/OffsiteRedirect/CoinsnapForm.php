@@ -33,12 +33,11 @@ class CoinsnapForm extends PaymentOffsiteForm {
         if ($checkInvoice['result'] === true) {
             
             $redirectUrl = (!empty($paymentGatewayPlugin->getReturnUrl()))? $paymentGatewayPlugin->getReturnUrl() : $form['#return_url'];
-            $metadata = [];
-            $metadata['orderNumber'] = $order_id;
-            $metadata['customerName'] = $buyerName;
-
-            if ($paymentGatewayPlugin->getProvider() === 'btcpay') {
-                $metadata['orderId'] = $order_id;
+            // metadata.orderId (BTCPay) and the top-level orderId (Coinsnap) stay the order ID: onNotify() matches on them.
+            $metadata = $this->invoiceMetadata($order);
+            $metadata['orderId'] = (string) $order_id;
+            if (trim($buyerName) !== '') {
+                $metadata['customerName'] = $buyerName;
             }
 
             $redirectAutomatically = ($paymentGatewayPlugin->getAutoredirect() > 0) ? true : false;
@@ -118,6 +117,24 @@ class CoinsnapForm extends PaymentOffsiteForm {
         }
     }
 	
+    // Order, customer and line-item data for the invoice; never stops the checkout.
+    protected function invoiceMetadata($order): array {
+        try {
+            // On the site address saved with the gateway (as the webhook URL), not the request's Host.
+            $config = $this->entity->getPaymentGateway()->getPlugin()->getConfiguration();
+            $base = \Drupal\drupalcommerce_coinsnap\Plugin\Commerce\PaymentGateway\CoinsnapRedirect::normalizeBaseUrl((string) ($config['webhook_base_url'] ?? ''));
+            $path = Url::fromRoute('entity.commerce_order.canonical', ['commerce_order' => $order->id()])->getInternalPath();
+            $orderUrl = $base !== null ? $base . '/' . ltrim($path, '/') : '';
+        } catch (\Throwable $e) {
+            $orderUrl = '';
+        }
+        try {
+            return \Drupal\drupalcommerce_coinsnap\InvoiceMetadata::fromOrder($order, (string) $orderUrl, defined('COINSNAP_DRUPAL_VERSION') ? COINSNAP_DRUPAL_VERSION : '');
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
     public function checkAmount($amount, $currency){
         
         $payment = $this->entity;
